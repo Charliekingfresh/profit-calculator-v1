@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>蝦皮利潤計算機</title>
+  <style>
+    :root {
+      --page: #f6f7fb;
+      --surface: #fff;
+      --ink: #111b32;
+      --muted: #8290a6;
+      --line: #dfe5ee;
+      --accent: #ffbf00;
+      --accent-dark: #9a6b00;
+      --violet: #6558ff;
+      --green: #008d6a;
+      --red: #d64d5b;
+      --shadow: 0 12px 34px rgba(31, 42, 74, .045);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .layout { max-width: 1200px; margin: 0 auto; padding: 38px 28px 72px; }
+    header { text-align: center; margin-bottom: 32px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; border: 1px solid #ffe29a;
+      background: #fff7de; color: #936500; border-radius: 999px;
+      font-size: 12px; font-weight: 800; padding: 5px 15px; letter-spacing: .03em;
+    }
+    h1 { margin: 13px 0 3px; font-size: clamp(31px, 4vw, 43px); line-height: 1.35; letter-spacing: -.045em; font-weight: 850; }
+    h1 span { color: #e6a900; }
+    .lead { color: #7f8da5; margin: 6px 0 0; font-size: 14px; }
+    .inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 17px;
+      box-shadow: var(--shadow); min-width: 0;
+    }
+    .input-card { padding: 25px 23px 27px; min-height: 190px; }
+    .card-head { display: flex; align-items: center; gap: 11px; margin-bottom: 25px; }
+    .step { display: inline-flex; justify-content: center; align-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: #fff1bc; color: #8a6300; font-weight: 800; font-size: 14px; }
+    h2 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.025em; }
+    .field-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .field-row label { font-weight: 700; font-size: 14px; }
+    .number-shell { position: relative; width: 145px; flex: 0 0 145px; }
+    input[type="number"] {
+      width: 100%; height: 39px; padding: 7px 43px 7px 13px;
+      background: #fff; border: 1px solid #d9e0eb; border-radius: 9px;
+      color: #0a1630; font-family: inherit; font-size: 15px; font-weight: 800; line-height: 1.3;
+      text-align: right; font-variant-numeric: tabular-nums; outline: none; transition: box-shadow .2s, border-color .2s;
+      appearance: textfield; -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"]:focus { border-color: #f4b900; box-shadow: 0 0 0 3px rgba(255,191,0,.17); }
+    input[type="number"]:out-of-range { border-color: var(--red); }
+    .suffix { position: absolute; top: 50%; right: 11px; transform: translateY(-50%); font-size: 12px; color: #98a5b9; pointer-events: none; white-space: nowrap; }
+    input[type="range"] {
+      --progress: 0%; appearance: none; -webkit-appearance: none; width: 100%; height: 6px;
+      margin: 0; display: block; cursor: pointer; border-radius: 99px;
+      background: linear-gradient(to right, var(--accent) 0 var(--progress), #e7eaf2 var(--progress) 100%);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none; -webkit-appearance: none; width: 17px; height: 17px;
+      background: var(--accent); border: 2px solid white; border-radius: 50%;
+      box-shadow: 0 0 0 1px #eca900;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 13px; height: 13px; background: var(--accent); border: 2px solid white;
+      border-radius: 50%; box-shadow: 0 0 0 1px #eca900;
+    }
+    input[type="range"]:focus-visible { outline: 3px solid rgba(255,191,0,.5); outline-offset: 6px; }
+    .range-hints { display: flex; justify-content: space-between; margin-top: 11px; color: #a2aec0; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 17px; }
+    .result-card { padding: 23px 25px 25px; }
+    .result-heading { color: #667792; font-weight: 800; font-size: 14px; margin-bottom: 14px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .metric-label { font-size: 13px; color: #8998ae; margin: 0 0 4px; }
+    .metric-value { font-size: clamp(21px, 2.6vw, 33px); font-weight: 850; line-height: 1.2; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .metric-value.purple { color: var(--violet); }
+    .metric-value.green { color: var(--green); }
+    .metric-value.negative { color: var(--red); }
+    .result-note { margin: 18px 0 0; color: #a0aabb; font-size: 12px; border-top: 1px solid #edf0f5; padding-top: 12px; }
+    .footnote { text-align: center; color: #8a97ad; font-size: 12px; margin: 23px auto 0; max-width: 900px; }
+    @media (max-width: 900px) { .inputs { grid-template-columns: 1fr; } .input-card { min-height: auto; } .card-head { margin-bottom: 20px; } }
+    @media (max-width: 580px) {
+      .layout { padding: 29px 16px 46px; }
+      header { margin-bottom: 25px; }
+      .results { grid-template-columns: 1fr; }
+      .input-card { padding: 20px; }
+      .result-card { padding: 20px; }
+      .metric-value { font-size: 28px; }
+      .number-shell { width: 135px; flex-basis: 135px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <header>
+      <span class="eyebrow">互動式利潤試算室 · 即時計算</span>
+      <h1>蝦皮<span>利潤計算機</span></h1>
+      <p class="lead">自由輸入或拖曳數值，即時比較抽成前後的利潤與利潤率。</p>
+    </header>
+
+    <section class="inputs" aria-label="計算參數">
+      <article class="card input-card">
+        <div class="card-head"><span class="step">1</span><h2>蝦皮售價</h2></div>
+        <div class="field-row"><label for="price-number">商品售價</label><div class="number-shell"><input id="price-number" type="number" min="1" max="9999" step="1" inputmode="numeric" value="500"><span class="suffix">元</span></div></div>
+        <input id="price-range" type="range" min="1" max="9999" step="1" value="500" aria-label="調整蝦皮售價">
+        <div class="range-hints"><span>1 元</span><span>9,999 元</span></div>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">2</span><h2>平台抽成</h2></div>
+        <div class="field-row"><label for="fee-number">抽成比例</label><div class="number-shell"><input id="fee-number" type="number" min="1" max="100" step="0.1" inputmode="decimal" value="10"><span class="suffix">%</span></div></div>
+        <input id="fee-range" type="range" min="1" max="100" step="0.1" value="10" aria-label="調整平台抽成比例">
+        <div class="range-hints"><span>1%</span><span>100%</span></div>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">3</span><h2>進貨成本</h2></div>
+        <div class="field-row"><label for="cost-number">商品成本</label><div class="number-shell"><input id="cost-number" type="number" min="1" max="9999" step="1" inputmode="numeric" value="300"><span class="suffix">元</span></div></div>
+        <input id="cost-range" type="range" min="1" max="9999" step="1" value="300" aria-label="調整商品進貨成本">
+        <div class="range-hints"><span>1 元</span><span>9,999 元</span></div>
+      </article>
+    </section>
+
+    <section class="results" aria-label="利潤計算結果" aria-live="polite" aria-atomic="true">
+      <article class="card result-card">
+        <div class="result-heading">扣除抽成後</div>
+        <div class="result-grid">
+          <div><p class="metric-label">A. 利潤</p><div id="after-profit" class="metric-value purple">NT$ 150</div></div>
+          <div><p class="metric-label">B. 利潤率</p><div id="after-margin" class="metric-value purple">30.00%</div></div>
+        </div>
+        <p class="result-note">售價 − 平台抽成金額 − 進貨成本</p>
+      </article>
+      <article class="card result-card">
+        <div class="result-heading">尚未扣除抽成</div>
+        <div class="result-grid">
+          <div><p class="metric-label">A. 利潤</p><div id="before-profit" class="metric-value green">NT$ 200</div></div>
+          <div><p class="metric-label">B. 利潤率</p><div id="before-margin" class="metric-value green">40.00%</div></div>
+        </div>
+        <p class="result-note">售價 − 進貨成本</p>
+      </article>
+    </section>
+
+    <p class="footnote">利潤率 = 利潤 ÷ 蝦皮售價 × 100%。本工具僅計算指定的抽成與進貨成本，未包含運費、廣告費、金流手續費等其他支出。</p>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const specs = {
+        price: { min: 1, max: 9999, step: 1 },
+        fee: { min: 1, max: 100, step: 0.1 },
+        cost: { min: 1, max: 9999, step: 1 }
+      };
+      const state = { price: 500, fee: 10, cost: 300 };
+      const moneyFormat = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
+      const money = value => `NT$ ${moneyFormat.format(value)}`;
+      const percent = value => `${value.toFixed(2)}%`;
+      const roundCents = value => Math.round((value + Number.EPSILON) * 100) / 100;
+
+      function normalize(key, raw) {
+        const cfg = specs[key];
+        const n = Number(raw);
+        if (!Number.isFinite(n)) return null;
+        const capped = Math.max(cfg.min, Math.min(cfg.max, n));
+        return Math.round(capped / cfg.step) * cfg.step;
+      }
+      function updateRange(key) {
+        const el = document.getElementById(`${key}-range`);
+        const { min, max } = specs[key];
+        el.value = String(state[key]);
+        el.style.setProperty('--progress', `${((state[key] - min) / (max - min)) * 100}%`);
+      }
+      function putMetric(id, value, formatted) {
+        const el = document.getElementById(id);
+        el.textContent = formatted;
+        el.classList.toggle('negative', value < 0);
+      }
+      function recalculate() {
+        const { price, fee, cost } = state;
+        const before = roundCents(price - cost);
+        const after = roundCents(price * (1 - fee / 100) - cost);
+        putMetric('after-profit', after, money(after));
+        putMetric('after-margin', after, percent(after / price * 100));
+        putMetric('before-profit', before, money(before));
+        putMetric('before-margin', before, percent(before / price * 100));
+      }
+      for (const key of Object.keys(specs)) {
+        const number = document.getElementById(`${key}-number`);
+        const range = document.getElementById(`${key}-range`);
+        range.addEventListener('input', () => {
+          state[key] = normalize(key, range.value);
+          number.value = String(state[key]);
+          updateRange(key);
+          recalculate();
+        });
+        number.addEventListener('input', () => {
+          if (number.value.trim() === '') return; // 讓使用者能先清空後重新輸入
+          const next = normalize(key, number.value);
+          if (next === null) return;
+          state[key] = next;
+          updateRange(key);
+          recalculate();
+        });
+        number.addEventListener('blur', () => {
+          number.value = String(state[key]); // 超出允許範圍時，離開輸入框後自動修正
+        });
+        updateRange(key);
+      }
+      recalculate();
+    })();
+  </script>
+</body>
+</html>
