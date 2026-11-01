@@ -5,3 +5,5 @@ https://charliekingfresh.github.io/profit-calculator-v1/shopee_profit_calculator
 https://charliekingfresh.github.io/profit-calculator-v1/shopee_profit_calculator_v4_3.html
 
 https://charliekingfresh.github.io/profit-calculator-v1/shopee_profit_calculator_v4_4.html
+
+https://charliekingfresh.github.io/profit-calculator-v1/shopee_profit_calculator_v4_8.html
