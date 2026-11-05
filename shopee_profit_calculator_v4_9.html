@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>蝦皮利潤計算機 V4.9｜稅金與 ROAS 試算</title>
+  <style>
+    :root {
+      --page: #f6f7fb;
+      --surface: #fff;
+      --ink: #111b32;
+      --muted: #8290a6;
+      --line: #dfe5ee;
+      --accent: #ffbf00;
+      --accent-dark: #966500;
+      --violet: #6558ff;
+      --green: #008d6a;
+      --red: #d64d5b;
+      --shadow: 0 12px 34px rgba(31,42,74,.045);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--page); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      font-size: 15px; line-height: 1.6;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .layout { max-width: 1200px; margin: 0 auto; padding: 34px 28px 76px; }
+    .top-header { text-align: center; margin-bottom: 33px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; border: 1px solid #ffe29a;
+      background: #fff7de; color: #936500; border-radius: 999px;
+      font-size: 12px; font-weight: 800; padding: 5px 15px; letter-spacing: .03em;
+    }
+    h1 { margin: 13px 0 3px; font-size: clamp(31px,4vw,43px); line-height: 1.35; letter-spacing: -.045em; font-weight: 850; }
+    h1 span { color: #e6a900; }
+    .lead { color: #7f8da5; margin: 6px 0 0; font-size: 14px; }
+    .inputs { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 16px; align-items: start; }
+    .extra-hint { margin: 12px 0 0; color: #96a2b4; font-size: 12px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 17px;
+      box-shadow: var(--shadow); min-width: 0;
+    }
+    .input-card { padding: 25px 23px 27px; min-height: 190px; }
+    .card-head { display: flex; align-items: center; gap: 11px; margin-bottom: 25px; }
+    .step { display: inline-flex; justify-content: center; align-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: #fff1bc; color: #8a6300; font-weight: 800; font-size: 14px; }
+    h2 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.025em; }
+    .field-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .field-row label { font-weight: 700; font-size: 14px; }
+    .number-shell { position: relative; width: 145px; flex: 0 0 145px; }
+    input[inputmode="decimal"] {
+      width: 100%; height: 39px; padding: 7px 41px 7px 11px;
+      background: #fff; border: 1px solid #d9e0eb; border-radius: 9px;
+      color: #0a1630; font-family: inherit; font-size: 15px; font-weight: 800; line-height: 1.3;
+      text-align: right; font-variant-numeric: tabular-nums; outline: none;
+      transition: box-shadow .2s,border-color .2s; appearance: textfield; -moz-appearance: textfield;
+    }
+
+    input[inputmode="decimal"]:focus, input[type="text"]:focus { border-color: #f4b900; box-shadow: 0 0 0 3px rgba(255,191,0,.17); outline: none; }
+    .suffix { position: absolute; top: 50%; right: 11px; transform: translateY(-50%); font-size: 12px; color: #98a5b9; pointer-events: none; white-space: nowrap; }
+    input[type="range"] {
+      --progress: 0%; appearance: none; -webkit-appearance: none; width: 100%; height: 6px;
+      margin: 0; display: block; cursor: pointer; border-radius: 99px;
+      background: linear-gradient(to right,var(--accent) 0 var(--progress),#e7eaf2 var(--progress) 100%);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none; -webkit-appearance: none; width: 17px; height: 17px;
+      background: var(--accent); border: 2px solid white; border-radius: 50%; box-shadow: 0 0 0 1px #eca900;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 13px; height: 13px; background: var(--accent); border: 2px solid white; border-radius: 50%; box-shadow: 0 0 0 1px #eca900;
+    }
+    input[type="range"]:focus-visible, button:focus-visible { outline: 3px solid rgba(255,191,0,.5); outline-offset: 4px; }
+    .range-hints { display: flex; justify-content: space-between; margin-top: 11px; color: #a2aec0; font-size: 11px; font-variant-numeric: tabular-nums; }
+
+    /* 抽成細項展開區 */
+    .fee-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      margin-top: 16px; padding: 9px 11px; border: 1px solid #e6dfc4; border-radius: 10px;
+      color: #816218; background: #fffbf0; font-size: 12px; font-weight: 800; }
+    .fee-toggle:hover { background: #fff3cc; }
+    .fee-toggle .arrow { font-size: 13px; transition: transform .2s; }
+    .fee-toggle[aria-expanded="true"] .arrow { transform: rotate(180deg); }
+    .fee-details { margin-top: 13px; border-top: 1px solid #edf0f5; padding-top: 14px; }
+    .fee-details[hidden] { display: none; }
+    .fee-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin: 9px 0; }
+    .fee-detail-row label { font-size: 12px; font-weight: 700; flex: 1 1 auto; }
+    .fee-detail-row .number-shell { flex: 0 0 100px; width: 100px; }
+    .fee-detail-row input[inputmode="decimal"] { height: 36px; font-size: 13px; padding-right: 28px; }
+    .fee-detail-row .suffix { right: 9px; }
+    .fee-detail-hint { margin: 4px 0 10px; font-size: 11px; color: #8b98ae; }
+    .fee-detail-status { margin-top: 11px; padding: 9px 10px; background: #f7f8fd; border-radius: 9px;
+      color: #667792; font-size: 11px; line-height: 1.65; }
+    .fee-detail-status.error { color: #ba394a; background: #fff2f3; }
+    .fee-auto-indicator { color: #8c6611; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .fee-clear { padding: 4px 0; margin-top: 8px; border: 0; color: #6f7e92; background: transparent;
+      font-size: 11px; text-decoration: underline; }
+    .results { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 17px; }
+    .result-card { padding: 23px 25px 25px; }
+    .result-heading { color: #667792; font-weight: 800; font-size: 14px; margin-bottom: 14px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .metric-label { font-size: 13px; color: #8998ae; margin: 0 0 4px; }
+    .metric-value { font-size: clamp(21px,2.6vw,33px); font-weight: 850; line-height: 1.2; letter-spacing: -.045em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .metric-value.purple { color: var(--violet); }
+    .metric-value.green { color: var(--green); }
+    .metric-value.negative { color: var(--red); }
+    .result-note { margin: 18px 0 0; color: #a0aabb; font-size: 12px; border-top: 1px solid #edf0f5; padding-top: 12px; }
+    .footnote { text-align: center; color: #8a97ad; font-size: 12px; margin: 23px auto 0; max-width: 900px; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 40px 1px 16px; }
+    .section-header h2 { font-size: 21px; }
+    .section-subtitle { margin: 3px 0 0; color: #8d9bb0; font-size: 13px; }
+    .target-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+    .target-card { padding: 24px 25px 20px; }
+    .target-card .card-head { margin-bottom: 16px; }
+    .pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 11px; padding: 3px 8px; font-weight: 800; }
+    .pill.violet { background: #eeedff; color: #6155e6; }
+    .pill.green { background: #e2f8ee; color: #00866a; }
+    .target-price-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; margin-bottom: 16px; padding: 16px 17px; background: #f8f9fd; border: 1px solid #eef0f6; border-radius: 13px; }
+    .target-price-caption { font-size: 12px; color: #7c8ba1; font-weight: 700; }
+    .target-price-value { font-size: clamp(24px,2.6vw,31px); font-weight: 850; line-height: 1.25; letter-spacing: -.035em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .target-price-value.violet { color: var(--violet); }
+    .target-price-value.green { color: var(--green); }
+    .target-price-value.unreachable { color: var(--red); font-size: 20px; }
+    .target-price-control { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; flex: 0 1 190px; min-width: 0; }
+    .target-price-currency { color: var(--violet); font-size: clamp(21px,2.6vw,30px); font-weight: 850; white-space: nowrap; }
+    .target-price-control.green .target-price-currency { color: var(--green); }
+    input[inputmode="decimal"].target-price-number {
+      width: 100%; min-width: 0; height: 43px; padding: 5px 9px; background: transparent;
+      border-color: transparent; border-bottom: 1px dashed #d6ddea; border-radius: 4px;
+      color: var(--violet); font-size: clamp(22px,2.6vw,30px); font-weight: 850;
+      text-align: right; letter-spacing: -.035em;
+    }
+    .target-price-control.green input[inputmode="decimal"].target-price-number { color: var(--green); }
+    input[inputmode="decimal"].target-price-number:focus { background: #fff; border: 1px solid #f4b900; }
+    .target-price-box { margin-bottom: 17px; }
+    .target-price-box .target-price-caption { max-width: 210px; }
+    .target-price-hints { margin: 8px 0 0; }
+    .target-price-feedback { margin: 12px 0 0; font-size: 12px; color: #75849b; line-height: 1.65; }
+    .target-price-feedback b { color: var(--green); }
+    .target-price-feedback .not-met, .target-price-feedback .unreachable { color: var(--red); }
+    .target-price-feedback .advisory { color: #8c7892; }
+    .table-header { margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f6; color: #8996ac; font-size: 13px; font-weight: 800; }
+    .quick-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+    .quick-table td { padding: 7px 3px; border-bottom: 1px solid #f0f2f7; }
+    .quick-table tr:last-child td { border-bottom: none; }
+    .quick-table td:nth-child(2) { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .quick-table td:last-child { text-align: right; font-weight: 750; font-variant-numeric: tabular-nums; color: #78869b; white-space: nowrap; width: 88px; }
+    .quick-table td:first-child { width: 22%; }
+    .quick-table td:nth-child(2) { padding-right: 16px; }
+    .quick-table thead th { color: #98a3b3; font-size: 11px; font-weight: 700; padding: 6px 3px 7px; border-bottom: 1px solid #eef0f6; }
+    .quick-table thead th:first-child { text-align: left; }
+    .quick-table thead th:nth-child(2) { text-align: right; padding-right: 16px; }
+    .quick-table thead th:last-child { text-align: right; white-space: nowrap; width: 88px; }
+    .quick-table .active-row td:last-child { color: #8a753e; }
+    @media (max-width: 420px) { .quick-table td:last-child, .quick-table thead th:last-child { width: 71px; } .quick-table td:nth-child(2), .quick-table thead th:nth-child(2) { padding-right: 7px; } }
+    .quick-table td:first-child { color: #72829a; }
+    .quick-table .active-row td { color: var(--accent-dark); background: #fffaf0; }
+    .quick-table .invalid-price { color: #c97376; font-weight: 700; font-size: 12px; }
+    .target-help { font-size: 12px; line-height: 1.7; color: #95a1b5; margin: 14px 0 0; }
+    .history-section { margin-top: 41px; }
+    .history-section .section-header { margin-top: 0; }
+    .history-card { padding: 23px 25px 25px; }
+    .history-form { display: flex; align-items: end; flex-wrap: wrap; gap: 11px; margin-bottom: 18px; }
+    .name-group { display: grid; gap: 6px; flex: 1 1 250px; }
+    .name-group label { font-weight: 700; font-size: 13px; }
+    #record-name { height: 41px; width: 100%; border: 1px solid #d9e0eb; border-radius: 9px; padding: 9px 12px; font-size: 14px; color: var(--ink); background: #fff; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-height: 40px; padding: 8px 15px; border: 1px solid #d9e0eb; background: #fff; color: #53657f; border-radius: 9px; font-size: 13px; font-weight: 800; transition: background .15s,border-color .15s; }
+    .btn:hover { background: #f7f8fc; border-color: #bfc8d5; }
+    .btn-primary { color: #5f4500; background: #ffd445; border-color: #f6c52b; }
+    .btn-primary:hover { background: #ffca19; border-color: #f4bc11; }
+    .btn-danger { color: #bd4551; }
+    .btn-danger:hover { background: #fff2f3; border-color: #eaaab1; }
+    .btn-small { padding: 4px 9px; font-size: 12px; min-height: 29px; }
+    .history-actions { display: flex; gap: 9px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #edf0f5; }
+    .history-scroller { overflow-x: auto; border-radius: 11px; border: 1px solid #edf0f5; }
+    .history-table { width: 100%; border-collapse: collapse; min-width: 870px; font-variant-numeric: tabular-nums; }
+    .history-table th { text-align: left; font-size: 12px; color: #8493aa; font-weight: 700; background: #fafbfd; padding: 12px 10px; white-space: nowrap; }
+    .history-table td { border-top: 1px solid #edf0f5; padding: 12px 10px; font-size: 13px; color: #39475e; white-space: nowrap; }
+    .history-table td.record-title { white-space: normal; max-width: 230px; font-weight: 750; overflow-wrap: anywhere; }
+    .history-table .record-buttons { display: flex; gap: 6px; }
+    .history-table .negative { color: var(--red); }
+    .empty-records { padding: 30px 18px; text-align: center; color: #8b98aa; font-size: 14px; }
+    .storage-message { font-size: 12px; color: #8a97ad; margin: 14px 0 0; }
+    .status { color: #008d6a; font-size: 13px; min-height: 20px; margin-top: 8px; }
+    .status.error { color: var(--red); }
+    .footer { text-align: center; color: #a0aaba; font-size: 12px; margin-top: 26px; }
+    .hidden-file { display: none; }
+    @media (min-width: 1041px) {
+      .inputs .input-card { padding-inline: 16px; }
+      .inputs .number-shell { flex: 0 1 53%; min-width: 0; }
+      .inputs .fee-detail-row .number-shell { flex: 0 1 76px; }
+    }
+    @media (max-width: 1040px) { .inputs { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 650px) { .inputs { grid-template-columns: 1fr; } .input-card { min-height: auto; } .input-card .card-head { margin-bottom: 20px; } }
+    @media (max-width: 720px) { .target-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 580px) {
+      .layout { padding: 29px 16px 46px; }
+      .top-header { margin-bottom: 25px; }
+      .results { grid-template-columns: 1fr; }
+      .input-card { padding: 20px; }
+      .result-card { padding: 20px; }
+      .target-card { padding: 20px; }
+      .history-card { padding: 20px 16px; }
+      .metric-value { font-size: 28px; }
+      .number-shell { width: 130px; flex-basis: 130px; }
+      .section-header h2 { font-size: 20px; }
+      .target-price-value { font-size: 29px; }
+      .target-price-box { flex-wrap: wrap; }
+      .target-price-control { flex: 1 1 145px; }
+      .history-form .btn-primary { width: 100%; }
+      .history-actions .btn { flex: 1 1 auto; }
+    }
+
+    /* ROAS 廣告試算：延續原版卡片與滑桿風格 */
+    .roas-section { margin-top: 18px; }
+    .roas-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:19px 24px; border:1px solid var(--line); border-radius:17px; background:#fff; color:var(--ink); box-shadow:var(--shadow); font-size:17px; font-weight:800; text-align:left; }
+    .roas-toggle:hover { background:#fffaf0; }
+    .roas-toggle .arrow { transition:transform .2s; color:var(--accent-dark); }
+    .roas-toggle[aria-expanded="true"] .arrow { transform:rotate(180deg); }
+    .roas-content { padding-top:16px; }
+    .roas-content[hidden] { display:none; }
+    .roas-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; }
+    .roas-grid > .roas-overview { grid-column:1 / -1; }
+    .roas-card { padding:23px 25px; }
+    .roas-card h2 { margin-bottom:16px; }
+    .roas-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .roas-stat { padding:13px 15px; background:#f8f9fd; border-radius:12px; min-width:0; }
+    .roas-stat .metric-label { margin-bottom:5px; }
+    .roas-field-hint { margin:8px 0 0; font-size:11px; color:#8b98ae; }
+    .roas-stat .metric-value { font-size:clamp(22px,2.6vw,30px); }
+    .roas-note { margin:14px 0 0; color:#8a97ad; font-size:12px; line-height:1.7; }
+    .roas-field { margin-bottom:20px; }
+    .roas-field:last-child { margin-bottom:0; }
+    .roas-field .field-row { margin-bottom:12px; }
+    .roas-field .number-shell { width:145px; flex-basis:145px; }
+    .roas-revenue-stat .roas-field { margin:0; }
+    .roas-revenue-stat .field-row { flex-wrap:wrap; gap:8px; }
+    .roas-revenue-stat .field-row label { font-size:12px; color:#667792; }
+    .roas-revenue-stat .number-shell { width:130px; flex-basis:130px; }
+    .roas-threshold { margin:12px 0 0; font-size:12px; color:#72829a; line-height:1.6; }
+    .roas-threshold strong { color:var(--violet); }
+    .roas-status { margin-top:14px; padding:11px 13px; border-radius:10px; background:#fff8e4; color:#806117; font-size:13px; }
+    .roas-status.negative { background:#fff1f3; color:#b93c4b; }
+    @media (max-width:580px) {
+      input[inputmode="decimal"]:not(.target-price-number), #record-name { font-size:16px; }
+      .roas-revenue-stat .number-shell { max-width:100%; min-width:0; }
+    }
+    @media (max-width:720px) { .roas-grid { grid-template-columns:1fr; } .roas-grid > .roas-overview { grid-column:auto; } }
+    @media (max-width:580px) { .roas-toggle { padding:17px 20px; } .roas-card { padding:20px; } .roas-stats { gap:10px; } .roas-stat { padding:12px; } .roas-stat .metric-value { font-size:23px; } }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <header class="top-header">
+      <span class="eyebrow">互動式利潤試算室 · V4.9</span>
+      <h1>蝦皮<span>利潤計算機</span></h1>
+      <p class="lead">自由輸入或拖曳數值，計算利潤、反推目標售價，並儲存過往試算。</p>
+    </header>
+
+    <section class="inputs" aria-label="計算參數">
+      <article class="card input-card">
+        <div class="card-head"><span class="step">1</span><h2>蝦皮售價</h2></div>
+        <div class="field-row"><label for="price-number">商品售價</label><div class="number-shell"><input id="price-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="399"><span class="suffix">元</span></div></div>
+        <input id="price-range" type="range" min="1" max="9999" step="0.01" value="399" aria-label="調整蝦皮售價">
+        <div class="range-hints"><span>1 元</span><span>9,999 元</span></div>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">2</span><h2>平台抽成</h2></div>
+        <div class="field-row"><label for="fee-number">抽成比例</label><div class="number-shell"><input id="fee-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="14.5"><span class="suffix">%</span></div></div>
+        <input id="fee-range" type="range" min="1" max="100" step="0.01" value="14.5" aria-label="調整平台抽成比例">
+        <div class="range-hints"><span>1%</span><span>100%</span></div>
+        <button type="button" id="fee-toggle" class="fee-toggle" aria-controls="fee-details" aria-expanded="false">
+          <span>＋ 展開抽成細項</span><span class="arrow" aria-hidden="true">⌄</span>
+        </button>
+        <div id="fee-details" class="fee-details" hidden>
+          <p class="fee-detail-hint">可填 0～100%，可輸入至小數點後兩位；留空代表尚未設定。</p>
+          <div class="fee-detail-row">
+            <label for="fee-category-number">品類平台抽成 <span id="fee-category-auto" class="fee-auto-indicator" hidden>（自動）</span></label>
+            <div class="number-shell"><input id="fee-category-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="未填"><span class="suffix">%</span></div>
+          </div>
+          <div class="fee-detail-row">
+            <label for="fee-payment-number">金流服務費 <span id="fee-payment-auto" class="fee-auto-indicator" hidden>（自動）</span></label>
+            <div class="number-shell"><input id="fee-payment-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="未填"><span class="suffix">%</span></div>
+          </div>
+          <div class="fee-detail-row">
+            <label for="fee-shipping-number">免運服務費 <span id="fee-shipping-auto" class="fee-auto-indicator" hidden>（自動）</span></label>
+            <div class="number-shell"><input id="fee-shipping-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="未填"><span class="suffix">%</span></div>
+          </div>
+          <div id="fee-details-status" class="fee-detail-status" role="status" aria-live="polite">未填細項：以最外層抽成為準。</div>
+          <button id="fee-clear" type="button" class="fee-clear">清空三個細項，改用最外層</button>
+        </div>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">3</span><h2>稅金</h2></div>
+        <div class="field-row"><label for="tax-number">預估稅率</label><div class="number-shell"><input id="tax-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="0" aria-describedby="tax-note"><span class="suffix">%</span></div></div>
+        <input id="tax-range" type="range" min="0" max="100" step="0.01" value="0" aria-label="調整預估稅率">
+        <div class="range-hints"><span>0%</span><span>100%</span></div>
+        <p class="extra-hint" id="tax-note">營業稅 營所稅</p>
+        <p class="fee-detail-hint">每件預留 <strong id="tax-amount">NT$ 0</strong>（售價 × 稅率）</p>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">4</span><h2>進貨成本</h2></div>
+        <div class="field-row"><label for="cost-number">商品成本</label><div class="number-shell"><input id="cost-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="173"><span class="suffix">元</span></div></div>
+        <input id="cost-range" type="range" min="1" max="9999" step="0.01" value="173" aria-label="調整商品進貨成本">
+        <div class="range-hints"><span>1 元</span><span>9,999 元</span></div>
+      </article>
+
+      <article class="card input-card">
+        <div class="card-head"><span class="step">5</span><h2>雜費</h2></div>
+        <div class="field-row"><label for="misc-number">額外費用</label><div class="number-shell"><input id="misc-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="0"><span class="suffix">元</span></div></div>
+        <input id="misc-range" type="range" min="0" max="999" step="0.01" value="0" aria-label="調整雜費">
+        <div class="range-hints"><span>0 元</span><span>999 元</span></div>
+        <p class="extra-hint">包材等等</p>
+      </article>
+    </section>
+
+    <section class="results" aria-label="利潤計算結果" aria-live="polite" aria-atomic="true">
+      <article class="card result-card">
+        <div class="result-heading">扣除抽成後</div>
+        <div class="result-grid">
+          <div><p class="metric-label">A. 利潤</p><div id="after-profit" class="metric-value purple">NT$ 168.15</div></div>
+          <div><p class="metric-label">B. 利潤率</p><div id="after-margin" class="metric-value purple">42.14%</div></div>
+        </div>
+        <p class="result-note">售價 − 平台抽成金額 − 預估稅金 − 進貨成本 − 雜費</p>
+      </article>
+      <article class="card result-card">
+        <div class="result-heading">尚未扣除抽成</div>
+        <div class="result-grid">
+          <div><p class="metric-label">A. 利潤</p><div id="before-profit" class="metric-value green">NT$ 226</div></div>
+          <div><p class="metric-label">B. 利潤率</p><div id="before-margin" class="metric-value green">56.64%</div></div>
+        </div>
+        <p class="result-note">售價 − 預估稅金 − 進貨成本 − 雜費</p>
+      </article>
+    </section>
+
+    <section class="roas-section" aria-label="ROAS 廣告回本試算">
+      <button type="button" class="roas-toggle" id="roas-toggle" aria-expanded="false" aria-controls="roas-content"><span>＋ 展開 ROAS 廣告回本試算</span><span class="arrow" aria-hidden="true">⌄</span></button>
+      <div id="roas-content" class="roas-content" hidden>
+        <div class="roas-grid">
+          <article class="card roas-card roas-overview">
+            <h2>商品利潤率 · 回本 ROAS</h2>
+            <div class="roas-stats">
+              <div class="roas-stat"><p class="metric-label">扣除抽成後利潤率</p><div class="metric-value purple" id="roas-margin">42.14%</div></div>
+              <div class="roas-stat"><p class="metric-label">回本 ROAS</p><div class="metric-value purple" id="roas-break-even">2.37</div></div>
+              <div class="roas-stat"><p class="metric-label">廣告後目標淨利率</p><div class="metric-value green" id="roas-target-rate">10.00%</div></div>
+              <div class="roas-stat"><p class="metric-label">保留目標利潤所需 ROAS</p><div class="metric-value green" id="roas-target">3.11</div></div>
+            </div>
+            <p class="roas-note">回本 ROAS = 100 ÷ 扣除抽成後利潤率（%）。目標 ROAS = 100 ÷（商品利潤率 − 廣告後目標淨利率）。商品利潤率已扣除平台抽成、預估稅金、進貨成本與雜費。</p>
+          </article>
+          <article class="card roas-card">
+            <h2>進階廣告變因</h2>
+            <div class="roas-field"><div class="field-row"><label for="roas-goal-number">廣告後還要保留的利潤率</label><div class="number-shell"><input id="roas-goal-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="10"><span class="suffix">%</span></div></div><input id="roas-goal-range" type="range" min="0" max="99" step="0.01" value="10" aria-label="調整廣告後目標利潤率"><div class="range-hints"><span>0%</span><span>99%</span></div></div>
+            <div class="roas-field"><div class="field-row"><label for="roas-budget-number">每日廣告預算</label><div class="number-shell"><input id="roas-budget-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="85"><span class="suffix">元</span></div></div><input id="roas-budget-range" type="range" min="0" max="10000" step="0.01" value="85" aria-label="調整每日廣告預算"><div class="range-hints"><span>0 元</span><span>10,000 元</span></div></div>
+            <div class="roas-field"><div class="field-row"><label for="roas-manual-number">預期 ROAS（可調整）</label><div class="number-shell"><input id="roas-manual-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="5.88"><span class="suffix">倍</span></div></div><input id="roas-manual-range" type="range" min="0" max="30" step="0.01" value="5.88" aria-label="調整預期 ROAS"><div class="range-hints"><span>0</span><span>30 倍</span></div><p class="roas-field-hint">調整 ROAS 會同步反推右側預期每日營業額。</p></div>
+          </article>
+        <article class="card roas-card">
+          <h2>廣告成效試算</h2>
+          <div class="roas-stats">
+            <div class="roas-stat"><p class="metric-label">預期實際 ROAS</p><div class="metric-value purple" id="roas-actual">—</div><p class="roas-threshold">達成目標最低 ROAS：<strong id="roas-needed-roas">—</strong></p></div>
+            <div class="roas-stat"><p class="metric-label">扣廣告費後淨利</p><div class="metric-value green" id="roas-net-profit">—</div></div>
+            <div class="roas-stat"><p class="metric-label">廣告後淨利率</p><div class="metric-value green" id="roas-net-rate">—</div></div>
+            <div class="roas-stat roas-revenue-stat"><div class="roas-field"><div class="field-row"><label for="roas-revenue-number">預期每日營業額（可調整）</label><div class="number-shell"><input id="roas-revenue-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="500"><span class="suffix">元</span></div></div><input id="roas-revenue-range" type="range" min="0" max="100000" step="0.01" value="500" aria-label="調整預期每日營業額"><div class="range-hints"><span>0 元</span><span>100,000 元</span></div></div><p class="roas-threshold">達成目標的最低營業額：<strong id="roas-needed-revenue">—</strong></p></div>
+          </div>
+          <div id="roas-status" class="roas-status" role="status" aria-live="polite"></div>
+          <p class="roas-note">左側 ROAS 與右側營業額可雙向調整；修改每日預算時會依最後調整的欄位同步另一個數值。目標利潤率不會覆蓋你的預期值。以每日預期營業額、每日廣告預算計算；假設營業額均適用目前商品的利潤率。預期 ROAS = 營業額 ÷ 廣告費。廣告後淨利 = 營業額 × 商品利潤率 − 廣告費。預算為 0 時 ROAS 不適用。</p>
+        </article>
+        </div>
+      </div>
+    </section>
+    <p class="footnote">利潤率 = 利潤 ÷ 蝦皮售價 × 100%。兩組利潤均計入按售價估算的稅金、進貨成本及雜費。稅金欄可填每筆銷售想預留的總比例。</p>
+
+    <section aria-labelledby="target-heading">
+      <div class="section-header">
+        <div><h2 id="target-heading">目標利潤率 · 反推售價</h2><p class="section-subtitle">調整利潤率反推最低售價，或直接拖曳售價查看實際利潤率。</p></div>
+      </div>
+      <div class="target-grid">
+        <article class="card target-card">
+          <div class="card-head"><span class="step">6</span><h2>扣除抽成後 · 利潤率</h2><span class="pill violet">含平台抽成</span></div>
+          <div class="field-row"><label for="target-after-number">期望的利潤率</label><div class="number-shell"><input id="target-after-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="40"><span class="suffix">%</span></div></div>
+          <input id="target-after-range" type="range" min="10" max="99" step="0.01" value="40" aria-label="調整扣除抽成後的期望利潤率">
+          <div class="range-hints"><span>10%</span><span>99%</span></div>
+          <div class="target-price-box">
+            <label class="target-price-caption" for="target-after-price-number">產品售價（可調整）</label>
+            <div class="target-price-control">
+              <span class="target-price-currency">NT$</span>
+              <input id="target-after-price-number" class="target-price-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="381" aria-label="輸入扣除抽成後的產品售價">
+            </div>
+          </div>
+          <input id="target-after-price-range" type="range" min="1" max="9999" step="0.01" value="381" aria-label="拖曳調整扣除抽成後的產品售價">
+          <div class="range-hints target-price-hints"><span>1 元</span><span>9,999 元</span></div>
+          <p id="target-after-limit" class="target-price-feedback" hidden></p>
+          
+          <div class="table-header">快速對照 · 目標利潤率與最低售價</div>
+          <table class="quick-table" aria-label="扣除抽成後各利潤率所需售價與成本倍數"><thead><tr><th>目標利潤率</th><th>產品售價</th><th>成本倍數</th></tr></thead><tbody id="after-price-table"></tbody></table>
+          
+        </article>
+        <article class="card target-card">
+          <div class="card-head"><span class="step">7</span><h2>尚未扣除抽成 · 利潤率</h2><span class="pill green">未扣平台抽成</span></div>
+          <div class="field-row"><label for="target-before-number">期望的利潤率</label><div class="number-shell"><input id="target-before-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="50"><span class="suffix">%</span></div></div>
+          <input id="target-before-range" type="range" min="10" max="99" step="0.01" value="50" aria-label="調整尚未扣除抽成的期望利潤率">
+          <div class="range-hints"><span>10%</span><span>99%</span></div>
+          <div class="target-price-box">
+            <label class="target-price-caption" for="target-before-price-number">產品售價（可調整）</label>
+            <div class="target-price-control green">
+              <span class="target-price-currency">NT$</span>
+              <input id="target-before-price-number" class="target-price-number" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="346" aria-label="輸入尚未扣除抽成的產品售價">
+            </div>
+          </div>
+          <input id="target-before-price-range" type="range" min="1" max="9999" step="0.01" value="346" aria-label="拖曳調整尚未扣除抽成的產品售價">
+          <div class="range-hints target-price-hints"><span>1 元</span><span>9,999 元</span></div>
+          <p id="target-before-limit" class="target-price-feedback" hidden></p>
+          
+          <div class="table-header">快速對照 · 目標利潤率與最低售價</div>
+          <table class="quick-table" aria-label="尚未扣除抽成各利潤率所需售價與成本倍數"><thead><tr><th>目標利潤率</th><th>產品售價</th><th>成本倍數</th></tr></thead><tbody id="before-price-table"></tbody></table>
+          
+        </article>
+      </div>
+    </section>
+
+    <section class="history-section" aria-labelledby="history-heading">
+      <div class="section-header">
+        <div><h2 id="history-heading">過往試算紀錄</h2><p class="section-subtitle">完成試算後手動儲存，可隨時載入舊紀錄比較。</p></div>
+        <span id="record-count" class="pill green">已儲存 0 筆</span>
+      </div>
+      <div class="card history-card">
+        <form id="save-form" class="history-form">
+          <div class="name-group"><label for="record-name">商品名稱／紀錄備註（選填）</label><input id="record-name" type="text" maxlength="80" placeholder="例如：手機殼、10 月促銷價格"></div>
+          <button type="submit" class="btn btn-primary">＋ 儲存本次試算</button>
+        </form>
+        <div class="history-scroller">
+          <table class="history-table" aria-label="過往計算紀錄">
+            <thead><tr><th>儲存時間</th><th>商品／備註</th><th>蝦皮售價</th><th>抽成</th><th>預估稅率</th><th>進貨成本</th><th>雜費</th><th>扣後利潤</th><th>扣後利潤率</th><th>操作</th></tr></thead>
+            <tbody id="record-rows"></tbody>
+          </table>
+          <div id="empty-records" class="empty-records">目前還沒有紀錄。輸入商品參數後，點選「儲存本次試算」。</div>
+        </div>
+        <div class="history-actions">
+          <button id="export-json" type="button" class="btn">匯出 JSON 備份</button>
+          <button id="export-csv" type="button" class="btn">匯出 CSV 表格</button>
+          <button id="import-button" type="button" class="btn">匯入 JSON 備份</button>
+          <button id="clear-records" type="button" class="btn btn-danger">清空所有紀錄</button>
+          <input id="import-file" class="hidden-file" type="file" accept=".json,application/json" aria-label="選取 JSON 備份檔案">
+        </div>
+        <p class="storage-message" id="storage-note">紀錄會保存在這台裝置的目前瀏覽器內，不需註冊。清除瀏覽器資料、使用無痕模式或換裝置時可能遺失，建議定期「匯出 JSON 備份」。</p>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+    <p class="footer">離線可用 · 無須帳號 · 所有計算與紀錄皆留在你的裝置</p>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const specs = {
+        price: { min: 1, max: 9999 },
+        fee: { min: 1, max: 100 },
+        tax: { min: 0, max: 100 },
+        cost: { min: 1, max: 9999 },
+        misc: { min: 0, max: 999 },
+        'target-after': { min: 10, max: 99 },
+        'target-before': { min: 10, max: 99 },
+        'target-after-price': { min: 1, max: 9999 },
+        'target-before-price': { min: 1, max: 9999 }
+      };
+      const state = {
+        price: 399, fee: 14.5, tax: 0, cost: 173, misc: 0,
+        'target-after': 40, 'target-before': 50,
+        'target-after-price': 381, 'target-before-price': 346,
+        'target-after-custom': false, 'target-before-custom': false
+      };
+      // feeParts 中的 null = 尚未填寫，數字 0 = 已填 0%。
+      const feeKeys = ['category','payment','shipping'];
+      let feeParts = { category:null, payment:null, shipping:null };
+      let feeAutoPart = null;
+      let feeExpanded = false;
+      const LEGACY_STORAGE_KEY = 'shopee-profit-calculator-records-v1';
+      const STORAGE_KEY = 'shopee-profit-calculator-records-v2';
+      const moneyFormat = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 2 });
+      const integerFormat = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 });
+      const money = value => `NT$ ${moneyFormat.format(value)}`;
+      const wholeMoney = value => `NT$ ${integerFormat.format(value)}`;
+      const percent = value => `${value.toFixed(2)}%`;
+      const roundCents = value => Math.round((value + 1e-9) * 100) / 100;
+      const $ = id => document.getElementById(id);
+      let records = [];
+      let storageEnabled = true;
+
+      function parseDecimal(raw) {
+        if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+        if (typeof raw !== 'string') return null;
+        const text = raw.trim().normalize('NFKC').replace(',', '.');
+        if (!/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+        const value = Number(text);
+        return Number.isFinite(value) ? value : null;
+      }
+      function normalize(key, raw) {
+        const value = parseDecimal(raw);
+        if (value === null) return null;
+        const {min, max} = specs[key];
+        return roundCents(Math.max(min, Math.min(max, value)));
+      }
+      function setSlider(key) {
+        const el = $(`${key}-range`);
+        const { min, max } = specs[key];
+        el.value = String(state[key]);
+        el.style.setProperty('--progress', `${Math.max(0,Math.min(100,((state[key] - min) / (max - min)) * 100))}%`);
+      }
+      // 數字輸入只在離開欄位時整理顯示，避免輸入 0.5 時「0.」被立即改成「0」。
+      function bindControl(key) {
+        const number = $(`${key}-number`);
+        const range = $(`${key}-range`);
+        const isTargetPrice = key.endsWith('-price') && key.startsWith('target-');
+        const isTargetRate = key === 'target-after' || key === 'target-before';
+        const onValue = (raw, fromRange = false) => {
+          const next = normalize(key, raw);
+          if (next === null) return;
+          state[key] = next;
+          if (key === 'fee') handleOuterFeeChange();
+          if (isTargetRate) {
+            const side = key.split('-')[1];
+            state[`target-${side}-custom`] = false;
+          }
+          if (isTargetPrice) {
+            const side = key.split('-')[1];
+            state[`target-${side}-custom`] = true;
+          }
+          // range 的操作才立即回填文字；鍵盤打字時保留原本的小數輸入狀態。
+          if (fromRange) number.value = String(state[key]);
+          setSlider(key);
+          recalculate();
+        };
+        range.addEventListener('input', () => onValue(range.value, true));
+        number.addEventListener('input', () => {
+          if (number.value.trim() === '') return;
+          onValue(number.value, false);
+        });
+        number.addEventListener('blur', () => {
+          // 若正在輸入 0. 或尚未完成輸入，就恢復最後有效值。
+          number.value = String(state[key]);
+          if (isTargetPrice) updateTarget(key.split('-')[1]);
+        });
+        setSlider(key);
+      }
+
+      function showFeeParts() {
+        feeKeys.forEach(part => {
+          const input = $(`fee-${part}-number`);
+          if (document.activeElement !== input) input.value = feeParts[part] === null ? '' : String(feeParts[part]);
+          $(`fee-${part}-auto`).hidden = feeAutoPart !== part;
+        });
+      }
+      function reportFee(message, error = false) {
+        const el = $('fee-details-status');
+        el.textContent = message;
+        el.classList.toggle('error', error);
+      }
+      function syncOuterFee() {
+        $('fee-number').value = String(state.fee);
+        setSlider('fee');
+      }
+      function updateFeeFromParts() {
+        if (!feeExpanded) return;
+        const manualKeys = feeKeys.filter(k => feeParts[k] !== null && feeAutoPart !== k);
+        if (feeAutoPart !== null && manualKeys.length !== 2) {
+          feeParts[feeAutoPart] = null;
+          feeAutoPart = null;
+        }
+        if (feeAutoPart !== null) {
+          const sum = roundCents(manualKeys.reduce((acc,k) => acc + feeParts[k],0));
+          const difference = roundCents(state.fee - sum);
+          if (difference < 0) {
+            feeParts[feeAutoPart] = null;
+            feeAutoPart = null;
+            reportFee(`已填細項共 ${sum}% ，大於最外層 ${state.fee}%。請調整金額。暫時仍以最外層抽成計算。`,true);
+            showFeeParts();
+            return;
+          }
+          feeParts[feeAutoPart] = difference;
+          reportFee(`已自動補齊「${feeLabel(feeAutoPart)}」${difference}%；三項合計 ${state.fee}%。`);
+        } else if (manualKeys.length === 2) {
+          const missing = feeKeys.find(k => feeParts[k] === null);
+          const sum = roundCents(manualKeys.reduce((acc,k) => acc + feeParts[k],0));
+          const rest = roundCents(state.fee - sum);
+          if (rest < 0) {
+            reportFee(`已填兩項合計 ${sum}% ，高於最外層 ${state.fee}%；剩餘項目不能是負數。暫以最外層抽成計算。`,true);
+          } else {
+            feeAutoPart = missing;
+            feeParts[missing] = rest;
+            reportFee(`已自動補齊「${feeLabel(missing)}」${rest}%；三項合計 ${state.fee}%。`);
+          }
+        } else if (manualKeys.length === 3) {
+          const sum = roundCents(manualKeys.reduce((acc,k) => acc + feeParts[k],0));
+          if (sum > 100 || sum < 1) {
+            reportFee(`三項合計 ${sum}% 超出最外層允許的 1～100% 範圍。請調整細項；暫採上一個有效抽成。`,true);
+          } else {
+            state.fee = sum;
+            syncOuterFee();
+            reportFee(`三項合計 ${sum}%，已同步最外層抽成和試算結果。`);
+          }
+        } else if (manualKeys.length === 1) {
+          reportFee(`目前只填一項，仍以最外層 ${state.fee}% 作為實際抽成。`);
+        } else {
+          reportFee(`未填細項，以最外層 ${state.fee}% 作為實際抽成。`);
+        }
+        showFeeParts();
+      }
+      function feeLabel(key) {
+        return { category:'品類平台抽成',payment:'金流服務費',shipping:'免運服務費' }[key];
+      }
+      function handleOuterFeeChange() {
+        if (!feeExpanded) return;
+        const count = feeKeys.filter(key => feeParts[key] !== null && feeAutoPart !== key).length;
+        // 三項都手動填好時，如果改變總抽成，改讓第三項自動補差額。
+        if (count === 3) {
+          feeAutoPart = 'shipping';
+          feeParts.shipping = null;
+        }
+        updateFeeFromParts();
+      }
+      function showFeeDetails() {
+        $('fee-details').hidden = !feeExpanded;
+        $('fee-toggle').setAttribute('aria-expanded', String(feeExpanded));
+        $('fee-toggle').querySelector('span').textContent = feeExpanded ? '－ 收合抽成細項' : '＋ 展開抽成細項';
+        if (feeExpanded) updateFeeFromParts();
+      }
+      function bindFeeDetails() {
+        $('fee-toggle').addEventListener('click', () => {
+          feeExpanded = !feeExpanded;
+          showFeeDetails();
+          // 收合後以最外層抽成為準（開啟時也會重新計算）。
+          recalculate();
+        });
+        feeKeys.forEach(part => {
+          const input = $(`fee-${part}-number`);
+          input.addEventListener('input', () => {
+            // 清空表示「沒有填」；0 是有填 0%。
+            if (input.value.trim() === '') {
+              feeParts[part] = null;
+            } else {
+              const value = parseDecimal(input.value);
+              if (value === null) return;
+              feeParts[part] = roundCents(Math.max(0, Math.min(100, value)));
+            }
+            if (feeAutoPart === part) feeAutoPart = null;
+            updateFeeFromParts();
+            recalculate();
+          });
+          input.addEventListener('blur', () => {
+            input.value = feeParts[part] === null ? '' : String(feeParts[part]);
+          });
+        });
+        $('fee-clear').addEventListener('click', () => {
+          feeParts = { category:null, payment:null, shipping:null };
+          feeAutoPart = null;
+          showFeeParts();
+          updateFeeFromParts();
+          recalculate();
+        });
+        showFeeDetails();
+      }
+      function updateAllControls() {
+        Object.keys(specs).forEach(key => {
+          $(`${key}-number`).value = String(state[key]);
+          setSlider(key);
+        });
+        recalculate();
+      }
+      function putMetric(id, value, formatted) {
+        const el = $(id);
+        el.textContent = formatted;
+        el.classList.toggle('negative', value < 0);
+      }
+      function calculate(price, fee, cost, misc, tax) {
+        const reserve = price * tax / 100;
+        const before = roundCents(price - reserve - cost - misc);
+        const after = roundCents(price * (1 - fee / 100) - reserve - cost - misc);
+        return { before, after, beforeRate: before / price * 100, afterRate: after / price * 100 };
+      }
+      function requiredPrice(targetRate, includeFee, values = state) {
+        // 百分點以整數計算，反推的最低建議售價沿用整元進位。
+        const remaining = 10000 - Math.round(targetRate * 100) - Math.round(values.tax * 100)
+          - (includeFee ? Math.round(values.fee * 100) : 0);
+        if (remaining <= 0) return null;
+        return Math.ceil((values.cost + values.misc) * 10000 / remaining - 1e-10);
+      }
+      function updateTarget(side) {
+        const includeFee = side === 'after';
+        const target = state[`target-${side}`];
+        const required = requiredPrice(target, includeFee);
+        const key = `target-${side}-price`;
+        if (!state[`target-${side}-custom`]) {
+          // 自動模式：滑桿與輸入欄都跟著目標率變動。
+          // 售價超過 9,999 時只把控制值設到上限，完整所需價會另行提示。
+          state[key] = required === null ? 9999 : Math.max(1,Math.min(9999,required));
+        }
+        const actualPrice = state[key];
+        if (state[`target-${side}-custom`]) {
+          state[`target-${side}`] = Number(((1 - state.tax / 100 - (includeFee ? state.fee / 100 : 0) - (state.cost + state.misc) / actualPrice) * 100).toFixed(2));
+          $(`target-${side}-number`).value = String(state[`target-${side}`]);
+          setSlider(`target-${side}`);
+        }
+        const priceInput = $(`${key}-number`);
+        if (document.activeElement !== priceInput || !state[`target-${side}-custom`]) {
+          priceInput.value = String(actualPrice);
+        }
+        setSlider(key);
+        const notice = $(`target-${side}-limit`);
+        const auto = !state[`target-${side}-custom`];
+        notice.hidden = !auto || (required !== null && required <= specs[key].max);
+        if (!notice.hidden) {
+          notice.textContent = required === null
+            ? '目前的扣除比例無法達成此目標利潤率。'
+            : `達標最低售價為 ${money(required)}，超過滑桿上限。`;
+          if (document.activeElement !== priceInput) priceInput.value = '';
+          priceInput.placeholder = '—';
+        }
+        // 使用者要求移除售價下方的實際利潤率文字說明。
+        const body = $(`${side}-price-table`);
+        const fragment = document.createDocumentFragment();
+        for (let rate = 10; rate <= 70; rate += 10) {
+          const price = requiredPrice(rate, includeFee);
+          const tr = document.createElement('tr');
+          if (Math.abs(rate - target) < 0.001) tr.className = 'active-row';
+          const tdRate = document.createElement('td');
+          tdRate.textContent = `${rate}%`;
+          const tdPrice = document.createElement('td');
+          tdPrice.textContent = price === null ? '無法達成' : `${integerFormat.format(price)} 元`;
+          if (price === null) tdPrice.className = 'invalid-price';
+          const tdMultiple = document.createElement('td');
+          // 成本倍數 = 反推售價 / (進貨成本 + 雜費)，保留小數點後兩位。
+          const totalCost = state.cost + state.misc;
+          tdMultiple.textContent = price === null || totalCost <= 0
+            ? '—' : `${(price / totalCost).toFixed(2)} 倍`;
+          tr.append(tdRate, tdPrice, tdMultiple);
+          fragment.appendChild(tr);
+        }
+        body.replaceChildren(fragment);
+      }
+
+      const roasState = { goal:10, budget:85, revenue:500, manual:500/85 };
+      let roasDriver = 'revenue';
+      const roasConfigs = {
+        goal:{max:99,sliderMax:99},
+        budget:{max:1000000,sliderMax:10000},
+        revenue:{max:10000000,sliderMax:100000},
+        manual:{max:10000,sliderMax:30}
+      };
+      function updateRoasControls(key) {
+        const range = $(`roas-${key}-range`);
+        const max = Math.max(roasConfigs[key].sliderMax,roasState[key]);
+        range.max = String(max);
+        range.value = String(roasState[key]);
+        range.style.setProperty('--progress',`${100 * roasState[key] / max}%`);
+        const units = {goal:'%', budget:' 元', revenue:' 元', manual:' 倍'};
+        range.nextElementSibling.lastElementChild.textContent = moneyFormat.format(max) + units[key];
+      }
+      function bindRoas() {
+        $('roas-toggle').addEventListener('click', () => {
+          const open = $('roas-toggle').getAttribute('aria-expanded') !== 'true';
+          $('roas-toggle').setAttribute('aria-expanded',String(open));
+          $('roas-toggle').querySelector('span').textContent = open ? '－ 收合 ROAS 廣告回本試算' : '＋ 展開 ROAS 廣告回本試算';
+          $('roas-content').hidden = !open;
+        });
+        Object.keys(roasConfigs).forEach(key => {
+          const input = $(`roas-${key}-number`);
+          const range = $(`roas-${key}-range`);
+          const cfg = roasConfigs[key];
+          const change = (raw,fromRange) => {
+            const value = parseDecimal(raw);
+            if (value === null) return;
+            const limit = fromRange ? Number(range.max) : cfg.max;
+            roasState[key] = roundCents(Math.max(0,Math.min(limit,value)));
+            if (key === 'manual' || key === 'revenue') roasDriver = key;
+            if (roasDriver === 'manual' && (key === 'manual' || key === 'budget')) {
+              roasState.revenue = roundCents(roasState.manual * roasState.budget);
+              $('roas-revenue-number').value = String(roasState.revenue);
+              updateRoasControls('revenue');
+            }
+            if (fromRange) input.value = String(roasState[key]);
+            updateRoasControls(key);
+            updateRoas();
+          };
+          input.addEventListener('input',()=>change(input.value,false));
+          input.addEventListener('blur',()=>{
+            input.value = key === 'manual' && roasDriver === 'revenue' && roasState.budget === 0 ? '' : String(roasState[key]);
+          });
+          range.addEventListener('input',()=>change(range.value,true));
+          updateRoasControls(key);
+        });
+        updateRoas();
+      }
+      function updateRoas() {
+        const result = calculate(state.price,state.fee,state.cost,state.misc,state.tax);
+        const margin = result.afterRate;
+        const {goal,budget,revenue} = roasState;
+        const breakEven = margin > 0 ? 100/margin : null;
+        const goalRoas = margin > goal ? 100/(margin-goal) : null;
+        const actual = budget > 0 ? revenue/budget : null;
+        if (roasDriver === 'revenue') {
+          roasState.manual = actual === null ? 0 : roundCents(actual);
+          if (document.activeElement !== $('roas-manual-number')) $('roas-manual-number').value = actual === null ? '' : String(roasState.manual);
+          updateRoasControls('manual');
+        }
+        const net = revenue*margin/100-budget;
+        const netRate = revenue > 0 ? net/revenue*100 : null;
+        const needed = margin > goal ? budget*100/(margin-goal) : null;
+        const show = (id,value,formatter) => {
+          const el = $(id);
+          el.textContent = value === null || !Number.isFinite(value) ? '無法達成' : formatter(value);
+          el.classList.toggle('negative',value !== null && value < 0);
+        };
+        show('roas-margin',margin,percent);
+        show('roas-break-even',breakEven,n=>n.toFixed(2));
+        show('roas-target-rate',goal,percent);
+        show('roas-target',goalRoas,n=>n.toFixed(2));
+        $('roas-actual').textContent = actual === null ? '—' : actual.toFixed(2);
+        $('roas-needed-roas').textContent = goalRoas === null ? '無法達成' : goalRoas.toFixed(2);
+        show('roas-net-profit',net,money);
+        $('roas-net-rate').textContent = netRate === null ? '—' : percent(netRate);
+        $('roas-net-rate').classList.toggle('negative',netRate !== null && netRate < 0);
+        $('roas-needed-revenue').textContent = needed === null ? '無法達成' : money(Math.ceil(needed-1e-9));
+        const status = $('roas-status');
+        const achieved = revenue > 0 && netRate !== null && netRate + 1e-8 >= goal;
+        status.classList.toggle('negative',!achieved);
+        status.textContent = margin <= goal
+          ? '目前商品利潤率不足以保留設定的目標淨利率；請提高售價、降低成本或調整目標。'
+          : revenue === 0 ? '預期營業額為 0，尚無法計算廣告後淨利率。'
+          : achieved ? `預期可達成 ${goal}% 的廣告後目標淨利率。`
+          : `預期尚未達成 ${goal}% 的廣告後目標淨利率。`;
+      }
+
+      function recalculate() {
+        const { price, fee, cost, misc, tax } = state;
+        const result = calculate(price, fee, cost, misc, tax);
+        $('tax-amount').textContent = money(price * tax / 100);
+        putMetric('after-profit', result.after, money(result.after));
+        putMetric('after-margin', result.after, percent(result.afterRate));
+        putMetric('before-profit', result.before, money(result.before));
+        putMetric('before-margin', result.before, percent(result.beforeRate));
+        updateTarget('after');
+        updateTarget('before');
+        updateRoas();
+      }
+
+      function alertStatus(message, isError = false) {
+        $('status').textContent = message;
+        $('status').classList.toggle('error', isError);
+      }
+      function persistRecords() {
+        if (!storageEnabled) return false;
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+          return true;
+        } catch (error) {
+          storageEnabled = false;
+          $('storage-note').textContent = '目前瀏覽器不允許本機儲存，紀錄可能只在本次開啟期間存在。請先用「匯出 JSON 備份」保存資料。';
+          return false;
+        }
+      }
+      function normalizeRecord(input) {
+        if (!input || typeof input !== 'object') return null;
+        const price = normalize('price', input.price);
+        const fee = normalize('fee', input.fee);
+        const cost = normalize('cost', input.cost);
+        const tax = normalize('tax', input.tax ?? 0);
+        if (tax === null || tax !== Number(input.tax ?? 0)) return null;
+        // 既有 V4 備份沒有雜費，歷史紀錄保持原計算結果（雜費 0 元）。
+        const legacyMisc = input.misc === undefined || input.misc === null;
+        const misc = legacyMisc ? 0 : normalize('misc', input.misc);
+        if (price === null || fee === null || cost === null || misc === null) return null;
+        // 備份來的數值必須本來就在允許範圍內，避免靜默扭曲。
+        if (price !== Number(input.price) || fee !== Number(input.fee) || cost !== Number(input.cost) || (!legacyMisc && misc !== Number(input.misc))) return null;
+        const targetAfter = Number(input.targetAfter ?? 40);
+        const targetBefore = Number(input.targetBefore ?? 50);
+        if (!Number.isFinite(targetAfter) || !Number.isFinite(targetBefore)) return null;
+        const targetAfterCustom = input.targetAfterCustom === true;
+        const targetBeforeCustom = input.targetBeforeCustom === true;
+        const targetAfterPrice = normalize('target-after-price', input.targetAfterPrice ?? 381);
+        const targetBeforePrice = normalize('target-before-price', input.targetBeforePrice ?? 346);
+        if (targetAfterCustom && targetAfterPrice === null) return null;
+        if (targetBeforeCustom && targetBeforePrice === null) return null;
+        const id = typeof input.id === 'string' && input.id.length <= 120 && input.id.trim() ? input.id : makeId();
+        const name = typeof input.name === 'string' ? input.name.trim().slice(0,80) : '';
+        const validTime = typeof input.savedAt === 'string' && Number.isFinite(Date.parse(input.savedAt));
+        const savedAt = validTime ? input.savedAt : new Date().toISOString();
+        const sourceParts = input.feeParts && typeof input.feeParts === 'object' ? input.feeParts : {};
+        const parts = {};
+        for (const key of feeKeys) {
+          const value = sourceParts[key];
+          if (value === undefined || value === null || value === '') { parts[key] = null; continue; }
+          const n = Number(value);
+          if (!Number.isFinite(n) || n < 0 || n > 100 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-6) return null;
+          parts[key] = roundCents(n);
+        }
+        const feeAutoPartRecord = feeKeys.includes(input.feeAutoPart) ? input.feeAutoPart : null;
+        const feeExpandedRecord = input.feeExpanded === true;
+        return { id, name, price, fee, tax, cost, misc, targetAfter, targetBefore,
+          targetAfterCustom, targetBeforeCustom, targetAfterPrice, targetBeforePrice, savedAt,
+          feeParts:parts, feeAutoPart:feeAutoPartRecord, feeExpanded:feeExpandedRecord };
+      }
+      function makeId() {
+        return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID() : `record-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+      function readRecords() {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          const legacy = stored === null ? localStorage.getItem(LEGACY_STORAGE_KEY) : null;
+          const parsed = JSON.parse(stored ?? legacy ?? '[]');
+          records = Array.isArray(parsed) ? parsed.map(normalizeRecord).filter(Boolean).slice(0,500) : [];
+          if (legacy !== null) persistRecords();
+        } catch (error) {
+          records = [];
+          storageEnabled = false;
+          $('storage-note').textContent = '無法讀取瀏覽器的本機儲存。請使用 JSON 備份以確保紀錄不遺失。';
+        }
+      }
+      function dateLabel(iso) {
+        return new Intl.DateTimeFormat('zh-TW', {
+          year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+        }).format(new Date(iso));
+      }
+      function cell(text, className = '') {
+        const td = document.createElement('td');
+        td.textContent = text;
+        if (className) td.className = className;
+        return td;
+      }
+      function renderRecords() {
+        const container = $('record-rows');
+        const fragment = document.createDocumentFragment();
+        records.forEach(record => {
+          const values = calculate(record.price,record.fee,record.cost,record.misc,record.tax);
+          const tr = document.createElement('tr');
+          tr.appendChild(cell(dateLabel(record.savedAt)));
+          tr.appendChild(cell(record.name || '未命名試算', 'record-title'));
+          tr.appendChild(cell(`${moneyFormat.format(record.price)} 元`));
+          tr.appendChild(cell(`${record.fee}%`));
+          tr.appendChild(cell(`${record.tax}%`));
+          tr.appendChild(cell(`${moneyFormat.format(record.cost)} 元`));
+          tr.appendChild(cell(`${moneyFormat.format(record.misc)} 元`));
+          tr.appendChild(cell(money(values.after),values.after < 0 ? 'negative' : ''));
+          tr.appendChild(cell(percent(values.afterRate),values.after < 0 ? 'negative' : ''));
+          const actionsCell = document.createElement('td');
+          const wrap = document.createElement('div');
+          wrap.className = 'record-buttons';
+          const load = document.createElement('button');
+          load.type = 'button'; load.className = 'btn btn-small'; load.textContent = '載入';
+          load.addEventListener('click', () => {
+            Object.assign(state, { price:record.price,fee:record.fee,tax:record.tax,cost:record.cost,misc:record.misc,
+              'target-after':record.targetAfter,'target-before':record.targetBefore,
+              'target-after-custom':record.targetAfterCustom,'target-before-custom':record.targetBeforeCustom,
+              'target-after-price':record.targetAfterPrice ?? 381,
+              'target-before-price':record.targetBeforePrice ?? 346 });
+            feeParts = {...record.feeParts};
+            feeAutoPart = record.feeAutoPart;
+            feeExpanded = record.feeExpanded;
+            $('record-name').value = record.name;
+            updateAllControls();
+            showFeeDetails();
+            showFeeParts();
+            window.scrollTo({ top:0,behavior:'smooth' });
+            alertStatus(`已載入「${record.name || '未命名試算'}」的試算數值。`);
+          });
+          const remove = document.createElement('button');
+          remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '刪除';
+          remove.addEventListener('click', () => {
+            if (!confirm(`確定刪除「${record.name || '未命名試算'}」這筆紀錄嗎？`)) return;
+            records = records.filter(row => row.id !== record.id);
+            const saved = persistRecords();
+            renderRecords();
+            alertStatus(saved ? '紀錄已刪除。' : '已從畫面刪除，但本機儲存不可用；請匯出備份。', !saved);
+          });
+          wrap.append(load,remove);
+          actionsCell.appendChild(wrap);
+          tr.appendChild(actionsCell);
+          fragment.appendChild(tr);
+        });
+        container.replaceChildren(fragment);
+        $('record-count').textContent = `已儲存 ${records.length} 筆`;
+        $('empty-records').hidden = records.length > 0;
+      }
+      function fileDownload(contents,mime,filename) {
+        const file = new Blob(['\uFEFF',contents],{type:mime});
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url),1000);
+      }
+      const csvCell = (value, escapeFormula = false) => {
+        let text = String(value);
+        // 僅針對使用者自行輸入的商品名稱防止試算表公式注入；數字負值仍保持為數字。
+        if (escapeFormula && /^[\s\u0000-\u001f]*[=+@\-]/.test(text)) text = "'" + text;
+        return `"${text.replaceAll('"','""')}"`;
+      };
+      const dateStamp = () => new Date().toISOString().slice(0,10);
+      function requiredPriceForRecord(record,side) {
+        const rate = side === 'After' ? record.targetAfter : record.targetBefore;
+        return requiredPrice(rate, side === 'After', record);
+      }
+
+      for (const key of Object.keys(specs)) bindControl(key);
+      bindFeeDetails();
+      recalculate();
+      readRecords();
+      renderRecords();
+      $('save-form').addEventListener('submit', event => {
+        event.preventDefault();
+        if (records.length >= 500) { alertStatus('目前最多保留 500 筆紀錄，請先匯出備份並刪除舊紀錄。',true); return; }
+        const entry = {
+          id:makeId(),name:$('record-name').value.trim().slice(0,80),
+          price:state.price,fee:state.fee,tax:state.tax,cost:state.cost,misc:state.misc,
+          feeParts:{...feeParts},feeAutoPart,feeExpanded,
+          targetAfter:state['target-after'],targetBefore:state['target-before'],
+          targetAfterCustom:state['target-after-custom'],targetBeforeCustom:state['target-before-custom'],
+          targetAfterPrice:state['target-after-price'],targetBeforePrice:state['target-before-price'],
+          savedAt:new Date().toISOString()
+        };
+        records.unshift(entry);
+        const saved = persistRecords();
+        renderRecords();
+        alertStatus(saved ? '已儲存本次試算。' : '目前只能暫存在本次畫面，請立即匯出 JSON 備份。',!saved);
+      });
+      $('export-json').addEventListener('click', () => {
+        fileDownload(JSON.stringify({format:'shopee-profit-records',version:2,exportedAt:new Date().toISOString(),records},null,2),'application/json;charset=utf-8',`蝦皮試算紀錄備份_${dateStamp()}.json`);
+        alertStatus(`已匯出 ${records.length} 筆紀錄的 JSON 備份。`);
+      });
+      $('export-csv').addEventListener('click', () => {
+        const headers = ['儲存時間','商品或備註','蝦皮售價','平台抽成(%)','進貨成本','雜費','品類平台抽成(%)','金流服務費(%)','免運服務費(%)','扣除抽成後利潤','扣除抽成後利潤率(%)','未扣抽成利潤','未扣抽成利潤率(%)','扣後期望利潤率(%)','未扣期望利潤率(%)','扣後反推區產品售價','未扣反推區產品售價','預估稅率(%)','每件預估稅金'];
+        const lines = [headers.map(csvCell).join(',')];
+        records.forEach(r => {
+          const m = calculate(r.price,r.fee,r.cost,r.misc,r.tax);
+          const displayPrice = (side,custom) => custom ? r[`target${side}Price`] : requiredPriceForRecord(r, side);
+          lines.push([dateLabel(r.savedAt),r.name,r.price,r.fee,r.cost,r.misc,r.feeParts?.category??'',r.feeParts?.payment??'',r.feeParts?.shipping??'',m.after,m.afterRate.toFixed(2),m.before,m.beforeRate.toFixed(2),r.targetAfter,r.targetBefore,
+            displayPrice('After',r.targetAfterCustom),displayPrice('Before',r.targetBeforeCustom),r.tax,roundCents(r.price*r.tax/100)].map((value,index) => csvCell(value ?? '無法達成',index === 1)).join(','));
+        });
+        fileDownload(lines.join('\r\n'),'text/csv;charset=utf-8',`蝦皮試算紀錄_${dateStamp()}.csv`);
+        alertStatus(`已匯出 ${records.length} 筆紀錄的 CSV 表格。`);
+      });
+      $('import-button').addEventListener('click', () => $('import-file').click());
+      $('import-file').addEventListener('change', async event => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { alertStatus('檔案過大，請選擇小於 2MB 的 JSON 備份。',true); return; }
+        try {
+          const parsed = JSON.parse((await file.text()).replace(/^\uFEFF/,''));
+          if (!parsed || parsed.format !== 'shopee-profit-records' || ![1,2].includes(parsed.version) || !Array.isArray(parsed.records)) throw new Error('不支援此備份格式');
+          if (parsed.records.length > 500) throw new Error('備份筆數超過 500 筆限制');
+          const imported = parsed.records.map(normalizeRecord);
+          if (imported.some(r => r === null)) throw new Error('備份包含不符合格式的紀錄');
+          const existingIds = new Set(records.map(r => r.id));
+          const newlyAdded = imported.filter(r => !existingIds.has(r.id));
+          if (records.length + newlyAdded.length > 500) throw new Error('合併後超過 500 筆，請先匯出並整理舊紀錄');
+          records = [...newlyAdded,...records].sort((a,b) => Date.parse(b.savedAt) - Date.parse(a.savedAt));
+          const saved = persistRecords();
+          renderRecords();
+          alertStatus(saved ? `匯入成功，新增 ${newlyAdded.length} 筆紀錄（重複紀錄已略過）。` : '匯入成功，但本機儲存不可用；請立即再匯出備份。',!saved);
+        } catch (error) { alertStatus(`匯入失敗：${error.message}`,true); }
+      });
+      $('clear-records').addEventListener('click', () => {
+        if (!records.length) { alertStatus('目前沒有紀錄可清空。'); return; }
+        if (!confirm(`確定清空所有 ${records.length} 筆紀錄嗎？這個操作無法復原，建議先匯出 JSON 備份。`)) return;
+        records = [];
+        const saved = persistRecords();
+        renderRecords();
+        alertStatus(saved ? '已清空所有紀錄。' : '畫面紀錄已清空，但瀏覽器儲存不可用。',!saved);
+      });
+      bindRoas();
+    })();
+  </script>
+</body>
+</html>
